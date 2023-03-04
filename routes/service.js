@@ -6,6 +6,7 @@
  */
 
 // Dependencies
+const express = require("express");
 const { MongoClient, ServerApiVersion } = require("mongodb");
 require("dotenv").config();
 
@@ -14,17 +15,24 @@ const service = {};
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.338egrb.mongodb.net/?retryWrites=true&w=majority`;
 
-const client = new MongoClient(uri, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  serverApi: ServerApiVersion.v1,
-});
+const app = express();
 
-console.log(uri);
+const client = new MongoClient(uri);
 
-service.getService = (req, res) => {
-  res.send("Service API Hear");
-};
-
+const db = client.db("mobile-selling");
+const serviceCollection = db.collection("service");
+async function run() {
+  try {
+    app.get("/services", async (req, res) => {
+      const query = {};
+      const cursor = serviceCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+  } finally {
+    await client.close();
+  }
+}
+run().catch(console.dir);
 // module export
-module.exports = service;
+module.exports = run;
