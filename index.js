@@ -53,19 +53,7 @@ client.connect((err) => {
   console.log("database connected");
 });
 
-const configuration = new Configuration({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-const openai = new OpenAIApi(configuration);
-
 async function run() {
-  const completion = await openai.createCompletion({
-    model: "text-davinci-003",
-    prompt: "How are you today?",
-  });
-  console.log(completion.data.choices[0].text);
-
   try {
     app.get("/services", async (req, res) => {
       const query = {};
