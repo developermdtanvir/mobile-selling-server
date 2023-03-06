@@ -11,6 +11,7 @@ const cors = require("cors");
 // const services = require("./routes/service");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
+const { Configuration, OpenAIApi } = require("openai");
 
 // object module scaffolding
 
@@ -24,6 +25,7 @@ const app = express();
 
 // middleware
 app.use(cors());
+app.use(express.json());
 
 // database
 
@@ -51,7 +53,19 @@ client.connect((err) => {
   console.log("database connected");
 });
 
+const configuration = new Configuration({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+const openai = new OpenAIApi(configuration);
+
 async function run() {
+  const completion = await openai.createCompletion({
+    model: "text-davinci-003",
+    prompt: "How are you today?",
+  });
+  console.log(completion.data.choices[0].text);
+
   try {
     app.get("/services", async (req, res) => {
       const query = {};
@@ -60,11 +74,12 @@ async function run() {
       res.send(result);
     });
 
-    // app.get("/service/:id", async (req, res) => {
-    //   const { id } = req.params;
-    //   const query = { _id: new ObjectId(id) };
-    //   console.log(query);
-    // });
+    app.get("/service/:id", async (req, res) => {
+      const { id } = req.params;
+      const query = { _id: new ObjectId(id) };
+      const result = await serviceCollection.findOne(query);
+      res.send(result);
+    });
   } finally {
     await client.close();
   }
