@@ -11,7 +11,6 @@ const cors = require("cors");
 // const services = require("./routes/service");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
-const { Configuration, OpenAIApi } = require("openai");
 
 // object module scaffolding
 
@@ -37,6 +36,7 @@ const client = new MongoClient(uri, {
 });
 
 const serviceCollection = client.db(process.env.DB_USER).collection("service");
+const reviewCollection = client.db(process.env.DB_USER).collection("review");
 
 app.get("/", (req, res) => {
   res.send("My Mongodb Server is running");
@@ -56,9 +56,9 @@ client.connect((err) => {
 async function run() {
   try {
     app.get("/services", async (req, res) => {
-      const query = {};
-      const cursor = serviceCollection.find(query);
-      const result = await cursor.toArray();
+      const query = req.query.order === 'asc' ? 1 : -1
+      const cursor = serviceCollection.find({price:{ $lt: 500 }});
+      const result = await cursor.sort({"price": query}).toArray();
       res.send(result);
     });
 
@@ -66,6 +66,20 @@ async function run() {
       const { id } = req.params;
       const query = { _id: new ObjectId(id) };
       const result = await serviceCollection.findOne(query);
+      res.send(result);
+    });
+
+    // review section working
+    // data comming from frontend and data send to backend
+    app.get("/review", async (req, res) => {
+      const query = {};
+      const cursor = reviewCollection.find(query);
+      const result = await cursor.limit(1).toArray();
+      res.send(result);
+    });
+    app.post("/review", async (req, res) => {
+      const data = req.body;
+      const result = await reviewCollection.insertOne(data);
       res.send(result);
     });
   } finally {
